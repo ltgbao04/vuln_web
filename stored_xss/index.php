@@ -23,14 +23,28 @@ function saveComment($name, $comment) {
     file_put_contents($commentsFile, json_encode($comments));
 }
 
+function resetComments() {
+    global $commentsFile;
+    file_put_contents($commentsFile, '[]');
+}
+
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name']) && isset($_POST['comment'])) {
-    saveComment($_POST['name'], $_POST['comment']);
-    header('Location: index.php');
-    exit;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['reset'])) {
+        resetComments();
+        header('Location: index.php?reset=success');
+        exit;
+    } elseif (isset($_POST['name']) && isset($_POST['comment'])) {
+        saveComment($_POST['name'], $_POST['comment']);
+        header('Location: index.php?posted=success');
+        exit;
+    }
 }
 
 $comments = getComments();
+$commentCount = count($comments);
+$posted = isset($_GET['posted']);
+$wasReset = isset($_GET['reset']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -62,6 +76,7 @@ $comments = getComments();
         .header p { color: #666; }
         .nav { margin: 20px 0; }
         .nav a { color: #11998e; text-decoration: none; margin: 0 15px; font-weight: 500; }
+        .nav a:hover { text-decoration: underline; }
         .card {
             background: white;
             padding: 25px;
@@ -81,28 +96,39 @@ $comments = getComments();
         }
         .form-group textarea { min-height: 100px; resize: vertical; }
         .form-group input:focus, .form-group textarea:focus { border-color: #11998e; outline: none; }
-        button {
-            background: #11998e;
-            color: white;
+        .btn {
             padding: 12px 30px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            margin-right: 10px;
         }
-        button:hover { background: #0d7a6e; }
-        .comment {
+        .btn-primary { background: #11998e; color: white; }
+        .btn-primary:hover { background: #0d7a6e; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-info { background: #17a2b8; color: white; text-decoration: none; display: inline-block; }
+        .btn-info:hover { background: #138496; }
+        .alert {
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .button-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .stats {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 5px;
-            margin-bottom: 15px;
-            border-left: 4px solid #11998e;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .comment-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .comment-name { font-weight: bold; color: #11998e; }
-        .comment-date { color: #999; font-size: 12px; }
-        .comment-text { color: #333; line-height: 1.6; }
-        .no-comments { text-align: center; color: #999; padding: 20px; }
+        .stats-text { color: #666; }
+        .stats-count { font-size: 24px; font-weight: bold; color: #11998e; }
     </style>
 </head>
 <body>
@@ -111,14 +137,33 @@ $comments = getComments();
             <h1>🌿 Community Blog</h1>
             <p>Share your thoughts with our community</p>
             <nav class="nav">
-                <a href="index.php">Home</a>
+                <a href="index.php">✏️ Post Comment</a>
+                <a href="comments.php">📖 View Comments</a>
                 <a href="about.php">About</a>
                 <a href="rules.php">Rules</a>
             </nav>
         </div>
 
+        <?php if ($posted): ?>
+            <div class="alert alert-success">
+                ✅ Your comment has been posted successfully! <a href="comments.php">View all comments</a>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($wasReset): ?>
+            <div class="alert alert-info">
+                🔄 All comments have been reset successfully!
+            </div>
+        <?php endif; ?>
+
         <div class="card">
             <h2>💬 Leave a Comment</h2>
+            
+            <div class="stats">
+                <span class="stats-text">Total comments posted:</span>
+                <span class="stats-count"><?php echo $commentCount; ?></span>
+            </div>
+
             <form method="POST" action="index.php">
                 <div class="form-group">
                     <label for="name">Your Name</label>
@@ -128,27 +173,20 @@ $comments = getComments();
                     <label for="comment">Your Comment</label>
                     <textarea id="comment" name="comment" required placeholder="Share your thoughts..."></textarea>
                 </div>
-                <button type="submit">Post Comment</button>
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">📝 Post Comment</button>
+                    <a href="comments.php" class="btn btn-info">📖 View All Comments</a>
+                </div>
             </form>
         </div>
 
         <div class="card">
-            <h2>📝 Recent Comments</h2>
-            <?php if (empty($comments)): ?>
-                <div class="no-comments">No comments yet. Be the first to share!</div>
-            <?php else: ?>
-                <?php foreach (array_reverse($comments) as $c): ?>
-                    <div class="comment">
-                        <div class="comment-header">
-                            <!-- VULNERABLE: Direct output without escaping -->
-                            <span class="comment-name"><?php echo $c['name']; ?></span>
-                            <span class="comment-date"><?php echo $c['date']; ?></span>
-                        </div>
-                        <!-- VULNERABLE: Direct output without escaping -->
-                        <div class="comment-text"><?php echo $c['comment']; ?></div>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
+            <h2>🔧 Admin Controls</h2>
+            <p style="color: #666; margin-bottom: 15px;">Reset all comments to start fresh (useful for testing).</p>
+            <form method="POST" action="index.php" onsubmit="return confirm('Are you sure you want to delete all comments?');">
+                <input type="hidden" name="reset" value="1">
+                <button type="submit" class="btn btn-danger">🗑️ Reset All Comments</button>
+            </form>
         </div>
     </div>
 </body>
