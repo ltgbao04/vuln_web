@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY vuln_demo_app.py /app/
+
+# Install Flask
+RUN pip install --no-cache-dir flask
+
+# Expose port 5000
+EXPOSE 5000
+
+# Run the application
+CMD ["python", "vuln_demo_app.py"]

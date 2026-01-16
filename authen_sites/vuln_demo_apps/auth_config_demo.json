@@ -1,0 +1,56 @@
+{
+    "target_url": "http://37.187.156.221:8888", 
+    "login_url": "http://37.187.156.221:8888/login",
+    "login_method": "POST",
+    "logout_url": "http://37.187.156.221:8888/logout",
+    "users": [
+        {
+            "username": "admin",
+            "password": "admin123",
+            "privilege_priority": 1,
+            "role": "admin",
+            "description": "Administrator with full access"
+        },
+        {
+            "username": "moderator",
+            "password": "mod123",
+            "privilege_priority": 2,
+            "role": "moderator",
+            "description": "Moderator with limited admin access"
+        },
+        {
+            "username": "user1",
+            "password": "user123",
+            "privilege_priority": 3,
+            "role": "user",
+            "description": "Regular user account 1"
+        },
+        {
+            "username": "user2",
+            "password": "pass456",
+            "privilege_priority": 3,
+            "role": "user",
+            "description": "Regular user account 2 (for IDOR testing)"
+        }
+    ],
+    "form_auth": {
+        "username_key": "username",
+        "password_key": "password"
+    },
+    "session_cookie_name": "session_id",
+    "notes": {
+        "session_fixation": "Session ID is NOT rotated after login",
+        "idor_endpoints": [
+            "/api/profile?id=X",
+            "/api/user/X",
+            "/api/order/X"
+        ],
+        "forced_browsing": [
+            "/admin/users",
+            "/admin/settings",
+            "/api/reports",
+            "/api/admin/stats"
+        ],
+        "business_logic": "/api/checkout"
+    }
+}

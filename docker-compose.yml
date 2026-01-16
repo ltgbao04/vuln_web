@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # PHP-based websites (attribute_xss, reflected_xss, stored_xss)
+  attribute-xss:
+    build:
+      context: ./attribute_xss
+      dockerfile: Dockerfile
+    container_name: attribute-xss
+    ports:
+      - "8081:80"
+    volumes:
+      - ./attribute_xss:/var/www/html
+    networks:
+      - vulnerable-net
+
+  reflected-xss:
+    build:
+      context: ./reflected_xss
+      dockerfile: Dockerfile
+    container_name: reflected-xss
+    ports:
+      - "8082:80"
+    volumes:
+      - ./reflected_xss:/var/www/html
+    networks:
+      - vulnerable-net
+
+  stored-xss:
+    build:
+      context: ./stored_xss
+      dockerfile: Dockerfile
+    container_name: stored-xss
+    ports:
+      - "8083:80"
+    volumes:
+      - ./stored_xss:/var/www/html
+    networks:
+      - vulnerable-net
+
+  # Static HTML website (dom_xss)
+  dom-xss:
+    build:
+      context: ./dom_xss
+      dockerfile: Dockerfile
+    container_name: dom-xss
+    ports:
+      - "8084:80"
+    volumes:
+      - ./dom_xss:/usr/share/nginx/html
+    networks:
+      - vulnerable-net
+
+  # Python Flask app
+  authen-python:
+    build:
+      context: ./authen_sites
+      dockerfile: Dockerfile.python
+    container_name: authen-python
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./authen_sites:/app
+    networks:
+      - vulnerable-net
+
+  # Node.js Express app
+  authen-nodejs:
+    build:
+      context: ./authen_sites/vuln_demo_apps
+      dockerfile: Dockerfile.nodejs
+    container_name: authen-nodejs
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./authen_sites/vuln_demo_apps:/app
+      - /app/node_modules
+    networks:
+      - vulnerable-net
+
+  # PHP Comprehensive app
+  authen-php:
+    build:
+      context: ./authen_sites/vuln_demo_apps
+      dockerfile: Dockerfile.php
+    container_name: authen-php
+    ports:
+      - "5002:80"
+    volumes:
+      - ./authen_sites/vuln_demo_apps:/var/www/html
+    networks:
+      - vulnerable-net
+
+networks:
+  vulnerable-net:
+    driver: bridge
